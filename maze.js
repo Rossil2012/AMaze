@@ -1,4 +1,4 @@
-var ctx, wid, hei, cols, rows, maze, stack = [], start = {x:-1, y:-1}, end = {x:-1, y:-1}, grid = 8, padding = 16, s, density=0.5;
+var isPrinting = false, pcur, pidx, ctx, wid, hei, cols, rows, maze, stack = [], start = {x:-1, y:-1}, end = {x:-1, y:-1}, grid = 8, padding = 16, s, density=0.5;
 function drawMaze() {
     for( var i = 0; i < cols; i++ ) {
         for( var j = 0; j < rows; j++ ) {
@@ -243,6 +243,29 @@ function print(cur)
     drawMaze();
     drawBlock(end.x, end.y, 8);
 }
+function aniPrint()
+{
+    if (pidx == pcur.length - 1)
+    {
+        maze[end.x][end.y] = 3;
+        drawBlock(end.x, end.y, 8);
+        --pidx;
+    }
+    else if (pidx == 0)
+    {
+        isPrinting = false;
+        return;
+    }
+    else
+    {
+        maze[pcur[pidx].x][pcur[pidx].y] = 3;
+        drawBlock(pcur[pidx].x, pcur[pidx].y, 3);
+        --pidx;
+    }
+
+    requestAnimationFrame(aniPrint);
+
+}
 
 function newSolveMaze()
 {
@@ -266,7 +289,31 @@ function newSolveMaze()
 
         if (tmp.x == end.x && tmp.y == end.y)
         {
-            print(tmp);
+            if(document.getElementById("chkAnimated").checked)
+            {
+                pcur = [];
+                for(var i = 0; i < cols; i++) {
+                    for(var j = 0; j < rows; j++) {
+                        if (maze[i][j] == 3)
+                        {
+                            maze[i][j] = 0;
+                        }
+                    }
+                }
+                drawMaze();
+                while (tmp)
+                {
+                    pcur.push(tmp);
+                    tmp = tmp.prev;
+                }
+                pidx = pcur.length - 1;
+
+                aniPrint();
+            }
+            else
+            {
+                print(tmp);
+            }
             return;
         }
 
@@ -302,9 +349,10 @@ function newSolveMaze()
     }
     drawBlock(start.x, start.y, 8);
     drawBlock(end.x, end.y, 8);
+    
 }
 
-function solveMaze1() { //replace
+function solveMaze1() { 
     if( start.x == end.x && start.y == end.y ) {
         for( var i = 0; i < cols; i++ ) {
             for( var j = 0; j < rows; j++ ) {
@@ -331,6 +379,10 @@ function solveMaze1() { //replace
     requestAnimationFrame( solveMaze1 );
 }
 function getCursorPos( event ) {
+    if (isPrinting)
+    {
+        return;
+    }
     var rect = this.getBoundingClientRect();
     var x = Math.floor( ( event.clientX - rect.left ) / grid / s), 
         y = Math.floor( ( event.clientY - rect.top  ) / grid / s);
@@ -341,7 +393,6 @@ function getCursorPos( event ) {
         drawMaze();
     } else {
         end = { x: x, y: y };
-        //maze[end.x][end.y] = 8;
         for( var i = 0; i < cols; i++ ) {
             for( var j = 0; j < rows; j++ ) {
                 if (maze[i][j] == 4)
